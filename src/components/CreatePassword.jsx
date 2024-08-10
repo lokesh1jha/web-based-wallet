@@ -14,7 +14,7 @@ const CreatePassword = ({ setPassword }) => {
             setError("Password didn't match");
         } else {
             setError("");
-            setPassword(password); // Using the setPassword prop passed from CreateWallet
+            setPassword(password);
             console.log("Password matched");
         }
     };

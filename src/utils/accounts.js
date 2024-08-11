@@ -49,9 +49,11 @@ const getDerivationPath = (account, addressIndex, coinType = 60) => {
     return path;
 }
 
-function createNewWallet(seed) {
+function createNewWallet() {
     try {
-        const derivationPath = getDerivationPath(0, 0);
+        let seed = localStorage.getItem("seed");
+        const accountCount = getAccounts().length;
+        const derivationPath = getDerivationPath(0, accountCount);
 
         const mnemonicPhrase = convertMnemonicToSeed(seed);
 

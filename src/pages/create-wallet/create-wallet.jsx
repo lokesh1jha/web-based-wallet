@@ -19,7 +19,8 @@ function CreateWallet() {
                 const generatedMnemonic = MnemonicPhraseGenerator();
                 setMnemonicPhrase(generatedMnemonic);
                 console.log("Generated Mnemonic Phrase:", generatedMnemonic);
-                createNewWallet(generatedMnemonic)
+                localStorage.setItem("seed", generatedMnemonic);
+                createNewWallet()
             }
         } else 
         if(localStorage.getItem("accounts")) {

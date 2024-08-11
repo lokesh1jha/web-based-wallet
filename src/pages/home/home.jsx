@@ -5,13 +5,13 @@ function Home() {
   const navigate = useNavigate();
 
   const handleCreateWalletClick = () => {
-    navigate('/create-wallet'); // Replace '/create-wallet' with the actual route you want to navigate to
+    navigate('/create-wallet');
   };
 
   return (
     <div className="home-container">
       <div className="content">
-        <h1 className="title">Welcome to Simple Web Wallet</h1>
+        <h1 className="title">Welcome to Sniff 🐕 Web Wallet</h1>
 
         <button className="create-wallet-button" onClick={handleCreateWalletClick}>
           Create a Wallet

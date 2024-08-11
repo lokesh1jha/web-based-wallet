@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import CreatePassword from '../../components/CreatePassword';
 import MnemonicPhrase from '../../components/MnemonicPhrase';
 import MnemonicPhraseGenerator from '../../utils/MnemonicPhraseGenerator';
+import { createNewWallet } from '../../utils/accounts';
 import { useNavigate } from 'react-router-dom';
 
 function CreateWallet() {
@@ -12,19 +13,19 @@ function CreateWallet() {
 
     // Check if the password is set
     useEffect(() => {
-        console.log("Password:------------", password);
         if (password.length > 0) {
             console.log("Password is set");
             if (!mnemonicPhrase) {
                 const generatedMnemonic = MnemonicPhraseGenerator();
                 setMnemonicPhrase(generatedMnemonic);
                 console.log("Generated Mnemonic Phrase:", generatedMnemonic);
+                createNewWallet(generatedMnemonic)
             }
         } else 
         if(localStorage.getItem("accounts")) {
             navigate('/wallet'); 
         }
-    }, [password, mnemonicPhrase]);
+    }, [password, mnemonicPhrase, navigate]);
 
     let content;
 

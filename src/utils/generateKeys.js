@@ -1,11 +1,12 @@
-import { HDNodeWallet, Wallet } from "ethers6";
+import { HDNodeWallet, Wallet } from "ethers";
+import * as bip39 from '@scure/bip39';
 
 export function deriveEthereumWallet(
   seed,
   derivationPath
 ) {
   const privateKey = deriveEthereumPrivateKey(seed, derivationPath);
-  return new Wallet(privateKey);
+  return {wallet: new Wallet(privateKey), privateKey};
 }
 
 export function deriveEthereumPrivateKey(
@@ -28,4 +29,20 @@ export function getEthereumWallet(privateKey) {
     throw new Error("Invalid Ethereum private key");
   }
   return wallet;
+}
+
+/**
+ * Convert a mnemonic phrase to a seed.
+ * @param {string} mnemonic - The mnemonic phrase (12 or 24 words) as a single string.
+ * @returns {Buffer} - The seed buffer
+ */
+export function convertMnemonicToSeed(mnemonic) {
+  try {
+    // Convert mnemonic phrase to seed
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
+    return seed;
+  } catch (error) {
+    console.error("Error converting mnemonic to seed:", error);
+    throw error;
+  }
 }

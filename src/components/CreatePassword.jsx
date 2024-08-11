@@ -25,11 +25,11 @@ const CreatePassword = ({ setPassword }) => {
             <form action="" onSubmit={formSubmit} className="form-container">
                 <div className="form-group">
                     <label htmlFor="password" className="form-label">Password</label>
-                    <input type="password" id="password" onChange={e => setLocalPassword(e.target.value)} className="form-input" />
+                    <input type="password" id="password" onChange={e => setLocalPassword(e.target.value)} className="form-input" required />
                 </div>
                 <div className="form-group">
                     <label htmlFor="confirm-password" className="form-label">Confirm Password</label>
-                    <input type="password" id="confirm-password" onChange={e => setConfirmPassword(e.target.value)} className="form-input" />
+                    <input type="password" id="confirm-password" onChange={e => setConfirmPassword(e.target.value)} className="form-input" required />
                 </div>
 
                 {error && <div className="error-message">{error}</div>}

@@ -27,7 +27,8 @@ const SniffWallet = () => {
     function createANewWallet() {
         createNewWallet();
         alert("New Wallet Created");
-        window.location.reload();
+        // window.location.reload();
+        setAccounts(getAccounts());
     }
 
     return (

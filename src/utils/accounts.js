@@ -25,6 +25,31 @@ const getAccounts = () => {
     return accounts ? JSON.parse(accounts) : [];
 }
 
+/**
+ * 
+ * @param {address} address 
+ * @returns {balance} - String
+ */
+const getAccountBalance = async (address) => {
+    const url = 'https://eth-mainnet.g.alchemy.com/v2/hbbeJpn0pQXOFr6NKVavbhwWChKQlXjj';
+    
+        console.log(address, typeof address);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "eth_getBalance",
+                params: [address, "latest"]
+            }),
+        });
+
+        const data = await response.json();
+        return (data.result).split("x")[0] + " ETH";
+}
 
 /**
  * Generate a derivation path for an HD wallet.
@@ -74,5 +99,32 @@ function createNewWallet() {
 }
 
 
+const sendEthTo = async (senderAddress, receiverAddress, amountToSend) => {
+    try {
+        const url = 'https://eth-mainnet.g.alchemy.com/v2/hbbeJpn0pQXOFr6NKVavbhwWChKQlXjj';
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "eth_sendTransaction",
+                params: [{
+                    from: senderAddress,
+                    to: receiverAddress,
+                    value: amountToSend
+                }]
+            }),
+        });
+        const data = await response.json();
+        console.log(data);
+        alert("Transaction sent successfully");
+    } catch (error) {
+        console.error("Error sending transaction:", error);
+        throw new Error("Error sending transaction:", error);
+    }
+}
 
-export { addAccount, getAccounts, createNewWallet }
+export { addAccount, getAccounts, createNewWallet, getAccountBalance }

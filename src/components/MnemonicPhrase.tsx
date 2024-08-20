@@ -1,6 +1,6 @@
 import React from "react";
 
-const MnemonicPhrase = ({ mnemonicPhrase, setOnNext }) => {
+const MnemonicPhrase = ({ mnemonicPhrase, setOnNext } : any) => {
 
   return (
     <div>
@@ -19,7 +19,7 @@ const MnemonicPhrase = ({ mnemonicPhrase, setOnNext }) => {
           padding: "20px",
         }}
       >
-        {mnemonicPhrase?.split(" ").map((word, index) => (
+        {mnemonicPhrase?.split(" ").map((word: string, index: number) => (
           <div
             key={index}
             style={{

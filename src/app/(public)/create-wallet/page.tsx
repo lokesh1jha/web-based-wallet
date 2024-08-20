@@ -1,17 +1,20 @@
+'use client';
+
+import CreatePassword from '@/components/CreatePassword';
+import MnemonicPhrase from '@/components/MnemonicPhrase';
+import { createNewWallet } from '@/utils/accounts';
+import MnemonicPhraseGenerator from '@/utils/MnemonicPhraseGenerator';
 import React, { useEffect, useState } from 'react';
-import CreatePassword from '../../components/CreatePassword';
-import MnemonicPhrase from '../../components/MnemonicPhrase';
-import MnemonicPhraseGenerator from '../../utils/MnemonicPhraseGenerator';
-import { createNewWallet } from '../../utils/accounts';
-import { useNavigate } from 'react-router-dom';
+
+import { useRouter } from 'next/navigation'
+ 
 
 function CreateWallet() {
-    const [password, setPassword] = useState("");
-    const [mnemonicPhrase, setMnemonicPhrase] = useState("");
-    const [onNext, setOnNext] = useState(false);
-    const navigate = useNavigate();
+    const [password, setPassword] = useState<string>("");
+    const [mnemonicPhrase, setMnemonicPhrase] = useState<string>("");
+    const [onNext, setOnNext] = useState<boolean>(false);
+    const router = useRouter(); // Ensure this is inside a client component
 
-    // Check if the password is set
     useEffect(() => {
         if (password.length > 0) {
             console.log("Password is set");
@@ -20,13 +23,12 @@ function CreateWallet() {
                 setMnemonicPhrase(generatedMnemonic);
                 console.log("Generated Mnemonic Phrase:", generatedMnemonic);
                 localStorage.setItem("seed", generatedMnemonic);
-                createNewWallet()
+                createNewWallet();
             }
-        } else 
-        if(localStorage.getItem("accounts")) {
-            navigate('/wallet'); 
+        } else if (localStorage.getItem("accounts")) {
+            router.push('/wallet'); 
         }
-    }, [password, mnemonicPhrase, navigate]);
+    }, [password, mnemonicPhrase, router]);
 
     let content;
 
@@ -40,8 +42,8 @@ function CreateWallet() {
             />
         );
     } else {
-        if(localStorage.getItem("accounts")) {
-            navigate('/wallet'); 
+        if (localStorage.getItem("accounts")) {
+            router.push('/wallet'); 
         }
         content = <div>Congratulations !! Your wallet is created.</div>;
     }

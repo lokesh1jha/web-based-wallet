@@ -1,18 +1,19 @@
 import { HDNodeWallet, Wallet } from "ethers";
-import * as bip39 from '@scure/bip39';
+import * as bip39 from 'bip39';
 
+// Define types for the function parameters and return values
 export function deriveEthereumWallet(
-  seed,
-  derivationPath
-) {
+  seed: Buffer,
+  derivationPath: string
+): { wallet: Wallet; privateKey: string } {
   const privateKey = deriveEthereumPrivateKey(seed, derivationPath);
-  return {wallet: new Wallet(privateKey), privateKey};
+  return { wallet: new Wallet(privateKey), privateKey };
 }
 
 export function deriveEthereumPrivateKey(
-  seed,
-  derivationPath
-) {
+  seed: Buffer,
+  derivationPath: string
+): string {
   const hdNode = HDNodeWallet.fromSeed(seed);
   const child = hdNode.derivePath(derivationPath);
   return child.privateKey;
@@ -20,9 +21,12 @@ export function deriveEthereumPrivateKey(
 
 /**
  * Validate an Ethereum private key
+ * @param privateKey - The private key to validate
+ * @returns The Wallet instance if the private key is valid
+ * @throws Error if the private key is invalid
  */
-export function getEthereumWallet(privateKey) {
-  let wallet;
+export function getEthereumWallet(privateKey: string): Wallet {
+  let wallet: Wallet;
   try {
     wallet = new Wallet(privateKey);
   } catch {
@@ -33,10 +37,11 @@ export function getEthereumWallet(privateKey) {
 
 /**
  * Convert a mnemonic phrase to a seed.
- * @param {string} mnemonic - The mnemonic phrase (12 or 24 words) as a single string.
- * @returns {Buffer} - The seed buffer
+ * @param mnemonic - The mnemonic phrase (12 or 24 words) as a single string.
+ * @returns The seed buffer
+ * @throws Error if conversion fails
  */
-export function convertMnemonicToSeed(mnemonic) {
+export function convertMnemonicToSeed(mnemonic: string): Buffer {
   try {
     // Convert mnemonic phrase to seed
     const seed = bip39.mnemonicToSeedSync(mnemonic);

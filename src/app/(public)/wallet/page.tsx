@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import { createNewWallet, getAccountBalance, getAccounts } from "@/utils/accounts";
+import { sendEther } from "@/utils/transfer/eth_transfer";
 
 // Define types for the account object
 interface Account {
     address: string;
     name: string;
+    privateKey?: string;
 }
 
 const SniffWallet: React.FC = () => {
@@ -25,12 +27,14 @@ const SniffWallet: React.FC = () => {
             if (accounts.length > 0) {
                 setCurrentAccount(accounts[0]);
             }
+
         };
 
         fetchAccounts();
     }, []);
 
     useEffect(() => {
+        setBalance("....");
         const fetchBalance = async () => {
             if (currentAccount?.address) {
                 const accountBalance = await getAccountBalance(currentAccount.address);
@@ -64,6 +68,15 @@ const SniffWallet: React.FC = () => {
         }
 
         // Call your send ETH function here
+        sendEther(currentAccount?.privateKey || "", receiverAddress, amountToSend)
+        .then((trx) => {
+            console.log(`Transaction hash: ${trx}`);
+            alert(`Transaction sent successfully`);
+        })
+        .catch((error) => {
+            console.error(`Error sending transaction: ${error}`);
+            alert(`Error sending transaction: ${error}`);
+        });
         // sendEthTo(currentAccount?.address || "", receiverAddress, amountToSend);
         console.log(`Sending ${amountToSend} ETH to ${receiverAddress}`);
     };

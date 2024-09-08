@@ -7,26 +7,27 @@ import MnemonicPhraseGenerator from '@/utils/MnemonicPhraseGenerator';
 import React, { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation'
- 
+
 
 function CreateWallet() {
     const [password, setPassword] = useState<string>("");
     const [mnemonicPhrase, setMnemonicPhrase] = useState<string>("");
     const [onNext, setOnNext] = useState<boolean>(false);
-    const router = useRouter(); // Ensure this is inside a client component
+    const router = useRouter(); 
 
     useEffect(() => {
         if (password.length > 0) {
             console.log("Password is set");
-            if (!mnemonicPhrase) {
+            if (localStorage.getItem("accounts")) {
+                router.push('/wallet');
+            }
+            else if (!mnemonicPhrase) {
                 const generatedMnemonic = MnemonicPhraseGenerator();
                 setMnemonicPhrase(generatedMnemonic);
                 console.log("Generated Mnemonic Phrase:", generatedMnemonic);
                 localStorage.setItem("seed", generatedMnemonic);
                 createNewWallet();
             }
-        } else if (localStorage.getItem("accounts")) {
-            router.push('/wallet'); 
         }
     }, [password, mnemonicPhrase, router]);
 
@@ -43,7 +44,7 @@ function CreateWallet() {
         );
     } else {
         if (localStorage.getItem("accounts")) {
-            router.push('/wallet'); 
+            router.push('/wallet');
         }
         content = <div>Congratulations !! Your wallet is created.</div>;
     }

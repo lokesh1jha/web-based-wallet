@@ -13,8 +13,9 @@ export default function SwapPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="flex items-center justify-center"> 
+    <Card className="w-96 mt-8"> 
+      <CardHeader className="mb-8">
         <CardTitle>Swap</CardTitle>
         <CardDescription>Swap tokens</CardDescription>
       </CardHeader>
@@ -31,10 +32,11 @@ export default function SwapPage() {
             </div>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="mt-4">
           <Button type="submit">Swap Tokens</Button>
         </CardFooter>
       </form>
     </Card>
+   </div>
   )
 }

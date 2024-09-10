@@ -13,7 +13,8 @@ export default function CreateTokenPage() {
   }
 
   return (
-    <Card>
+    <div className="flex items-center justify-center"> 
+    <Card className="w-96 mt-8"> 
       <CardHeader>
         <CardTitle>Launch Token</CardTitle>
         <CardDescription>Create your own token</CardDescription>
@@ -40,5 +41,6 @@ export default function CreateTokenPage() {
         </CardFooter>
       </form>
     </Card>
+    </div>
   )
 }

@@ -146,8 +146,8 @@ export default function CreateTokenPage() {
           <CardContent className="space-y-4">
             <Input placeholder="Connect your wallet please." className="bg-gray-700 text-white" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full text-white border-white hover:bg-gray-700">Revoke Freeze Authority</Button>
-              <Button variant="outline" className="w-full text-white border-white hover:bg-gray-700">Revoke Mint Authority</Button>
+              <Button variant="outline" className="w-full text-white border-white bg-black hover:bg-gray-700">Revoke Freeze Authority</Button>
+              <Button variant="outline" className="w-full text-white border-white bg-black hover:bg-gray-700">Revoke Mint Authority</Button>
             </div>
           </CardContent>
         </Card>

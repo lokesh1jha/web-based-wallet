@@ -106,7 +106,7 @@ export default function LandingPage() {
                 "Real-time market data and portfolio tracking"
               ]}
               ctaText="Create Wallet"
-              ctaLink="/create-wallet"
+              ctaLink="/dashboard/wallet"
               imageUrl="/wallet.jpg?height=300&width=400"
               isReversed={false}
             />
@@ -121,7 +121,7 @@ export default function LandingPage() {
                 "Built-in marketing and community-building tools"
               ]}
               ctaText="Launch Your Token"
-              ctaLink="/token-launchpad"
+              ctaLink="/dashboard/create-token"
               imageUrl="/launch_token.jpg?height=300&width=400"
               isReversed={true}
             />
@@ -136,7 +136,7 @@ export default function LandingPage() {
                 "Real-time price charts and market analysis tools"
               ]}
               ctaText="Start Swapping"
-              ctaLink="/coin-swap"
+              ctaLink="/dashboard/swap"
               imageUrl="/coin_swap.webp?height=300&width=400"
               isReversed={false}
             />

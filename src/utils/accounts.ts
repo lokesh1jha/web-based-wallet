@@ -70,7 +70,7 @@ export function getDerivationPath(account: number, addressIndex: number, coinTyp
     return path;
 }
 
-export function createNewWallet(): void {
+export function createNewWallet(): Account {
     try {
         const seed = localStorage.getItem("seed") || "";
         const accountCount = getAccounts().length;
@@ -82,11 +82,13 @@ export function createNewWallet(): void {
         console.log(JSON.stringify(walletObject));
 
         const existingAccountsCount = getAccounts().length;
-        addAccount({
+        const newAccount = {
             name: `Account-${existingAccountsCount + 1}`,
             address: walletObject.wallet.address,
             privateKey: walletObject.privateKey
-        });
+        }
+        addAccount(newAccount);
+        return newAccount;
     } catch (error: any) {
         console.error("Error creating new wallet:", error);
         throw new Error("Error creating new wallet: " + error.message);

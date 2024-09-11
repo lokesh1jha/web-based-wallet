@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/components/hooks/use-toast"
 import { createNewWallet } from "@/utils/accounts"
 
 interface Account {
@@ -30,7 +30,7 @@ const Wallet: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {useToast
+  useEffect(() => {
     fetchAccounts()
   }, [])
 
@@ -73,8 +73,31 @@ const Wallet: React.FC = () => {
     setCreateNew(true)
   }
 
-  const handleCreateAnotherWallet = () => {
-    createNewWallet();
+  const handleCreateAnotherWallet = async () => {
+    try {
+      const newAccount = createNewWallet()
+      toast({
+        title: "New Wallet Created",
+        description: `A new wallet with address ${newAccount.address.slice(0, 6)}...${newAccount.address.slice(-4)} has been created and selected.`,
+      })
+      return
+      const updatedAccounts = [...accounts, newAccount]
+      // setAccounts(updatedAccounts)
+      localStorage.setItem("accounts", JSON.stringify(updatedAccounts))
+      // setSelectedAccount(newAccount)
+      await fetchBalance(newAccount.address)
+      toast({
+        title: "New Wallet Created",
+        description: `A new wallet with address ${newAccount.address.slice(0, 6)}...${newAccount.address.slice(-4)} has been created and selected.`,
+      })
+    } catch (err) {
+      console.error("Error creating new wallet:", err)
+      toast({
+        title: "Error",
+        description: "Failed to create a new wallet. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleSelectAccount = async (address: string) => {
@@ -165,7 +188,7 @@ const Wallet: React.FC = () => {
         <CardContent>
           {accounts.length > 0 ? (
             <div className="space-y-4">
-              <Select onValueChange={handleSelectAccount} defaultValue={selectedAccount?.address}>
+              <Select onValueChange={handleSelectAccount} value={selectedAccount?.address}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a wallet" />
                 </SelectTrigger>
@@ -241,7 +264,7 @@ const Wallet: React.FC = () => {
           )}
         </CardContent>
       </Card>
-      {createNew && <NewWallet />}
+      {/* {createNew && <NewWallet onWalletCreated={handleCreateAnotherWallet} />} */}
     </>
   )
 }

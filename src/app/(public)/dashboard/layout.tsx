@@ -5,10 +5,15 @@ import { usePathname } from 'next/navigation';
 import { Wallet, Rocket, Repeat, Home, LayoutDashboard, AlignJustify, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import ConnectWalletButton from '@/components/ConnectWalletButton';
 import { Progress } from '@/components/ui/progress';
+import { WalletDisconnectButton, WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { clusterApiUrl } from '@solana/web3.js';
+// import { SendSOLToRandomAddress } from '@/components/SendSOLToRandomAddress'; // Send SOL button component
+import '@solana/wallet-adapter-react-ui/styles.css'
 
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
@@ -23,6 +28,9 @@ export default function ResponsiveLayout({ children }: { children: React.ReactNo
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  const network = WalletAdapterNetwork.Devnet;
+  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
   useEffect(() => {
     const closeSidebar = () => setIsSidebarOpen(false);
@@ -83,11 +91,10 @@ export default function ResponsiveLayout({ children }: { children: React.ReactNo
               <span className="sr-only">Toggle Menu</span>
             </button>
             <Link href="/" className="mr-6 flex items-center space-x-2">
-              <span className="font-bold sm:inline-block">
-                Sniff Dashboard
-              </span>
+              <span className="font-bold sm:inline-block">Sniff Dashboard</span>
             </Link>
           </div>
+          {/* Navigation for desktop */}
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
             {navItems.map((item) => (
               <Link
@@ -102,8 +109,16 @@ export default function ResponsiveLayout({ children }: { children: React.ReactNo
               </Link>
             ))}
           </nav>
-          <div className="flex items-center">
-            {/* <ConnectWalletButton /> */}
+          {/* Wallet buttons */}
+          <div className="flex items-center space-x-4">
+            <ConnectionProvider endpoint={endpoint}>
+              <WalletProvider wallets={[]} autoConnect>
+                <WalletModalProvider>
+                  <WalletMultiButton className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500 transition-colors" />
+                  <WalletDisconnectButton className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition-colors" />
+                </WalletModalProvider>
+              </WalletProvider>
+            </ConnectionProvider>
           </div>
         </div>
       </header>
@@ -151,11 +166,13 @@ export default function ResponsiveLayout({ children }: { children: React.ReactNo
         <div className="flex-1">
           <main className="flex-1 p-4 md:p-6 lg:p-8">
             <div className="mx-auto max-w-4xl">
+              {/* Include Send SOL button */}
+              {/* <SendSOLToRandomAddress /> */}
               {children}
             </div>
           </main>
         </div>
       </div>
     </div>
-  )
+  );
 }

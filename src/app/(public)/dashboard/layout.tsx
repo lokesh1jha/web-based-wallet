@@ -12,7 +12,6 @@ import { WalletDisconnectButton, WalletModalProvider, WalletMultiButton } from '
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { clusterApiUrl } from '@solana/web3.js';
-// import { SendSOLToRandomAddress } from '@/components/SendSOLToRandomAddress'; // Send SOL button component
 import '@solana/wallet-adapter-react-ui/styles.css'
 
 const navItems = [
@@ -165,9 +164,7 @@ export default function ResponsiveLayout({ children }: { children: React.ReactNo
         </AnimatePresence>
         <div className="flex-1">
           <main className="flex-1 p-4 md:p-6 lg:p-8">
-            <div className="mx-auto max-w-4xl">
-              {/* Include Send SOL button */}
-              {/* <SendSOLToRandomAddress /> */}
+            <div className="mx-auto max-w-4xl">      
               {children}
             </div>
           </main>

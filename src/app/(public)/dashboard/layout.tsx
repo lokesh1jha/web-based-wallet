@@ -1,15 +1,15 @@
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Wallet, Rocket, Repeat, Home, LayoutDashboard, AlignJustify, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { WalletDisconnectButton, WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { clusterApiUrl } from '@solana/web3.js';
 import '@solana/wallet-adapter-react-ui/styles.css'
@@ -21,6 +21,16 @@ const navItems = [
   { href: '/dashboard/create-token', icon: Rocket, label: 'Create Token' },
   { href: '/dashboard/swap', icon: Repeat, label: 'Swap' },
 ];
+
+function WalletButton() {
+  const { connected } = useWallet();
+
+  return connected ? (
+    <WalletDisconnectButton className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition-colors text-sm" />
+  ) : (
+    <WalletMultiButton className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500 transition-colors text-sm" />
+  );
+}
 
 export default function ResponsiveLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -48,7 +58,7 @@ export default function ResponsiveLayout({ children }: { children: React.ReactNo
     const timer = setTimeout(() => {
       setIsLoading(false);
       setProgress(100);
-    }, 500); // Simulate a short loading time
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [pathname]);
@@ -90,11 +100,11 @@ export default function ResponsiveLayout({ children }: { children: React.ReactNo
               <span className="sr-only">Toggle Menu</span>
             </button>
             <Link href="/" className="mr-6 flex items-center space-x-2">
-              <span className="font-bold sm:inline-block">Sniff Dashboard</span>
+              <span className="font-bold text-sm sm:text-base md:text-lg">Sniff Dashboard</span>
             </Link>
           </div>
           {/* Navigation for desktop */}
-          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+          <nav className="hidden md:flex items-center space-x-4 text-sm font-medium">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -109,12 +119,11 @@ export default function ResponsiveLayout({ children }: { children: React.ReactNo
             ))}
           </nav>
           {/* Wallet buttons */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center">
             <ConnectionProvider endpoint={endpoint}>
               <WalletProvider wallets={[]} autoConnect>
                 <WalletModalProvider>
-                  <WalletMultiButton className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500 transition-colors" />
-                  <WalletDisconnectButton className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition-colors" />
+                  <WalletButton />
                 </WalletModalProvider>
               </WalletProvider>
             </ConnectionProvider>
@@ -126,7 +135,7 @@ export default function ResponsiveLayout({ children }: { children: React.ReactNo
           {isSidebarOpen && (
             <motion.aside
               id="sidebar-menu"
-              className="fixed inset-y-0 left-0 z-50 w-72 bg-gray-800/95 backdrop-blur supports-[backdrop-filter]:bg-gray-800/60"
+              className="fixed inset-y-0 left-0 z-50 w-64 bg-gray-800/95 backdrop-blur supports-[backdrop-filter]:bg-gray-800/60"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}

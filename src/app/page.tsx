@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Shield, Zap, Coins, Wallet, Rocket, Repeat, Lock, Globe, Code, Moon, Sun } from 'lucide-react'
+import { ArrowRight, Shield, Zap, Coins, Wallet, Rocket, Repeat, Lock, Globe, Code, Moon, Sun, Menu } from 'lucide-react'
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function LandingPage() {
   const [theme, setTheme] = useState('light')
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -25,13 +26,15 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100">
-      <header className="container mx-auto px-4 py-8">
+      <header className="container mx-auto px-4 py-4 md:py-8">
         <nav className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center">
             <Image src="/sniff_logo.png" alt="Sniff Logo" width={40} height={40} />
-            <span className="text-2xl font-bold">Sniff Web3</span>
+            <h2 className="ml-2 text-lg font-semibold tracking-tight">
+              Sniff 
+            </h2>
           </div>
-          <div className="space-x-4 flex items-center">
+          <div className="hidden md:flex space-x-4 items-center">
             <Link href="#features" className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">Features</Link>
             <Link href="#products" className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">Products</Link>
             <Link href="#roadmap" className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">Roadmap</Link>
@@ -40,17 +43,33 @@ export default function LandingPage() {
               {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </Button>
           </div>
+          <div className="md:hidden flex items-center">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="mr-2">
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
         </nav>
+        {isMenuOpen && (
+          <div className="mt-4 space-y-2 md:hidden">
+            <Link href="#features" className="block text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">Features</Link>
+            <Link href="#products" className="block text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">Products</Link>
+            <Link href="#roadmap" className="block text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">Roadmap</Link>
+            <Link href="/contact" className="block text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">Contact</Link>
+          </div>
+        )}
       </header>
 
-      <main className="container mx-auto px-4 py-16">
-        <section className="mb-24">
+      <main className="container mx-auto px-4 py-8 md:py-16">
+        <section className="mb-16 md:mb-24">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="md:w-1/2 mb-8 md:mb-0">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
                 Your Gateway to the Web3 Ecosystem
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8">
                 Sniff Web3 offers a comprehensive suite of tools for managing digital assets, launching tokens, and participating in the decentralized economy.
               </p>
               <Button asChild size="lg">
@@ -59,21 +78,21 @@ export default function LandingPage() {
                 </Link>
               </Button>
             </div>
-            <div className="md:w-1/2">
+            <div className="md:w-1/2 md:pl-8">
               <Image
                 src="/solana_dev.jpg?height=400&width=600"
                 alt="Sniff Web3 Platform"
                 width={600}
                 height={400}
-                className="rounded-lg shadow-xl"
+                className="rounded-lg shadow-xl transition-transform duration-300 hover:scale-105"
               />
             </div>
           </div>
         </section>
 
-        <section id="features" className="mb-24">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Choose Sniff Web3?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <section id="features" className="mb-16 md:mb-24">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">Why Choose Sniff Web3?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             <FeatureCard
               icon={<Shield className="h-10 w-10 text-blue-500" />}
               title="Uncompromising Security"
@@ -92,8 +111,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="products" className="mb-24">
-          <h2 className="text-3xl font-bold text-center mb-12">Our Products</h2>
+        <section id="products" className="mb-16 md:mb-24">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">Our Products</h2>
           <div className="space-y-16">
             <ProductCard
               icon={<Wallet className="h-10 w-10 text-blue-500" />}
@@ -143,9 +162,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="roadmap" className="mb-24">
-          <h2 className="text-3xl font-bold text-center mb-12">Roadmap: Coming Soon</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <section id="roadmap" className="mb-16 md:mb-24">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">Roadmap: Coming Soon</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <RoadmapCard
               icon={<Lock className="h-10 w-10 text-purple-500" />}
               title="Decentralized Identity"
@@ -169,10 +188,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="mb-24">
-          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-8 text-center">
-            <h2 className="text-3xl font-bold mb-4">Ready to Dive into Web3?</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+        <section className="mb-16 md:mb-24">
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-6 md:p-8 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Dive into Web3?</h2>
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8">
               Join thousands of users already benefiting from the Sniff Web3 ecosystem.
             </p>
             <Button asChild size="lg">
@@ -186,7 +205,7 @@ export default function LandingPage() {
 
       <footer className="bg-gray-100 dark:bg-gray-800">
         <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <h3 className="font-bold mb-4">Products</h3>
               <ul className="space-y-2">
@@ -237,7 +256,7 @@ interface FeatureCardProps {
 
 function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
-    <Card>
+    <Card className="transition-transform duration-300 hover:scale-105">
       <CardHeader>
         <div className="mb-4">{icon}</div>
         <CardTitle>{title}</CardTitle>
@@ -264,10 +283,16 @@ function ProductCard({ icon, title, description, features, ctaText, ctaLink, ima
   return (
     <div className={`flex flex-col ${isReversed ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-8`}>
       <div className="w-full md:w-1/2">
-        <Image src={imageUrl} alt={title} width={400} height={300} className="rounded-lg shadow-xl" />
+        <Image 
+          src={imageUrl} 
+          alt={title} 
+          width={400} 
+          height={300} 
+          className="rounded-lg shadow-xl transition-transform duration-300 hover:scale-105" 
+        />
       </div>
       <div className="w-full md:w-1/2">
-        <Card>
+        <Card className="transition-transform duration-300 hover:scale-105">
           <CardHeader>
             <div className="mb-4">{icon}</div>
             <CardTitle>{title}</CardTitle>
@@ -291,7 +316,7 @@ function ProductCard({ icon, title, description, features, ctaText, ctaLink, ima
 
 function RoadmapCard({ icon, title, description }: FeatureCardProps) {
   return (
-    <Card>
+    <Card className="transition-transform duration-300 hover:scale-105">
       <CardHeader>
         <div className="mb-4">{icon}</div>
         <CardTitle>{title}</CardTitle>

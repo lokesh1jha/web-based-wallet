@@ -56,8 +56,7 @@ const Wallet: React.FC = () => {
   }
 
   const fetchBalance = async (address: string) => {
-    // Implement actual balance fetching logic here
-    // For now, we'll just use a mock balance
+    // Mocked balance fetching
     const mockBalance = (Math.random() * 10).toFixed(4)
     setAccounts(prevAccounts =>
       prevAccounts.map(account =>
@@ -76,16 +75,14 @@ const Wallet: React.FC = () => {
   const handleCreateAnotherWallet = async () => {
     try {
       const newAccount = createNewWallet()
-      toast({
-        title: "New Wallet Created",
-        description: `A new wallet with address ${newAccount.address.slice(0, 6)}...${newAccount.address.slice(-4)} has been created and selected.`,
-      })
-      return
-      const updatedAccounts = [...accounts, newAccount]
-      // setAccounts(updatedAccounts)
-      localStorage.setItem("accounts", JSON.stringify(updatedAccounts))
-      // setSelectedAccount(newAccount)
-      await fetchBalance(newAccount.address)
+      const newFormattedAccount = {
+        address: newAccount.address,
+        balance: '0.0000' // Initial balance placeholder
+      }
+      setAccounts([...accounts, newFormattedAccount])
+      setSelectedAccount(newFormattedAccount)
+      fetchBalance(newAccount.address)
+
       toast({
         title: "New Wallet Created",
         description: `A new wallet with address ${newAccount.address.slice(0, 6)}...${newAccount.address.slice(-4)} has been created and selected.`,
@@ -133,8 +130,7 @@ const Wallet: React.FC = () => {
       return
     }
 
-    // Implement actual sending logic here
-    // For now, we'll just show a success message
+    // Simulate successful transaction
     toast({
       title: "Transaction Successful",
       description: `${amount} SOL sent to ${receiverAddress}`,
@@ -143,7 +139,8 @@ const Wallet: React.FC = () => {
     setIsDialogOpen(false)
     setAmount("")
     setReceiverAddress("")
-    // Update the balance after sending
+
+    // Update balance after sending
     const newBalance = (currentBalance - amountToSend).toFixed(4)
     setSelectedAccount({ ...selectedAccount, balance: newBalance })
     setAccounts(prevAccounts =>
@@ -244,13 +241,11 @@ const Wallet: React.FC = () => {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         className="col-span-3"
-                        type="number"
-                        step="0.0001"
                       />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleSend}>Send</Button>
+                    <Button type="submit" onClick={handleSend}>Send</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

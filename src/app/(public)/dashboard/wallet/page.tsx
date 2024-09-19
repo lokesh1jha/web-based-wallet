@@ -59,8 +59,8 @@ const Wallet: React.FC = () => {
     // Implement actual balance fetching logic here
     // For now, we'll just use a mock balance
     const mockBalance = (Math.random() * 10).toFixed(4)
-    setAccounts(prevAccounts => 
-      prevAccounts.map(account => 
+    setAccounts(prevAccounts =>
+      prevAccounts.map(account =>
         account.address === address ? { ...account, balance: mockBalance } : account
       )
     )
@@ -146,8 +146,8 @@ const Wallet: React.FC = () => {
     // Update the balance after sending
     const newBalance = (currentBalance - amountToSend).toFixed(4)
     setSelectedAccount({ ...selectedAccount, balance: newBalance })
-    setAccounts(prevAccounts => 
-      prevAccounts.map(account => 
+    setAccounts(prevAccounts =>
+      prevAccounts.map(account =>
         account.address === selectedAccount.address ? { ...account, balance: newBalance } : account
       )
     )
@@ -264,7 +264,10 @@ const Wallet: React.FC = () => {
           )}
         </CardContent>
       </Card>
-      {/* {createNew && <NewWallet onWalletCreated={handleCreateAnotherWallet} />} */}
+      {createNew &&
+        <div className="w-full max-w-md mx-auto mt-8">
+          <NewWallet />
+        </div>}
     </>
   )
 }

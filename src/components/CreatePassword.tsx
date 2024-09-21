@@ -45,6 +45,7 @@ const CreatePassword: React.FC<CreatePasswordProps> = ({ setPassword }) => {
     } else {
       setError("")
       setPassword(password)
+      localStorage.setItem("password", password)
     }
   }
 

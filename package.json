@@ -33,6 +33,7 @@
     "ethers": "6.13.2",
     "framer-motion": "11.5.4",
     "lucide-react": "0.441.0",
+    "micro-ed25519-hdkey": "^0.1.2",
     "next": "14.2.12",
     "next-themes": "0.3.0",
     "pino-pretty": "11.2.2",

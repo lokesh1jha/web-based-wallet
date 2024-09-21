@@ -8,13 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, Copy, Send } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/hooks/use-toast"
 import { createNewWallet } from "@/utils/accounts"
 import { toast } from '@/components/hooks/use-toast'
-import { get } from "http"
 import { getSolanaBalance, sendSolTransaction, SOLANA_SYMBOL } from "@/utils/tokens/solana"
 import { getEthereumBalance, sendEthereumTransaction } from "@/utils/tokens/etherum"
 

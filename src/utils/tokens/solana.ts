@@ -7,6 +7,8 @@ import {
     Transaction,
 } from "@solana/web3.js";
 import * as bip39 from 'bip39';
+import { getAccounts } from "../accounts";
+import { HDKey } from "micro-ed25519-hdkey";
 
 export const SOLANA_SYMBOL = 'sol'
 
@@ -16,6 +18,8 @@ interface SolanaAccount {
     symbol: string
     publicAddress: string;
     privateKey: string;
+    keypair?: Keypair
+    balance?: number
 }
 
 interface Response {
@@ -30,34 +34,30 @@ export const createSolanaConnection = (): Connection => {
     return connection;
 };
 
-
 // Create a new Solana wallet
 export async function createSolanaWallet(): Promise<SolanaAccount> {
     try {
         const seedPhrase = localStorage.getItem("seed") || "";
+        const acoountsCount = getAccounts().length;
 
         if (!seedPhrase) {
             throw new Error("Seed phrase is missing. Create wallet first.");
         }
 
-        // Derive a seed from the mnemonic
-        const seed = await bip39.mnemonicToSeed(seedPhrase);
+        const seed = bip39.mnemonicToSeedSync(seedPhrase, ""); // (mnemonic, password)
 
-        // Use the first 32 bytes of the seed for ed25519 derivation
-        const derivedSeed = seed.slice(0, 32);
+        const hd = HDKey.fromMasterSeed(seed.toString("hex"));
+        const path = `m/44'/501'/${acoountsCount + 1}'/0'`;
 
-        // Generate the keypair from the derived seed using ed25519
-        const keypair = Keypair.fromSeed(Uint8Array.from(derivedSeed));
-
-        // Convert private key (which is a 64-byte Uint8Array) to a comma-separated string for easier storage
-        const privateKeyString = Array.from(keypair.secretKey).toString();
+        const keypair = Keypair.fromSeed(hd.derive(path).privateKey);
 
         // Return the public key (address) and private key
         return {
-            name: "Solana Account",
+            name: "Solana Account " + (acoountsCount + 1),
             symbol: SOLANA_SYMBOL,
-            publicAddress: keypair.publicKey.toString(),
-            privateKey: privateKeyString,
+            publicAddress: keypair.publicKey.toBase58(),
+            privateKey: JSON.stringify(keypair.secretKey),
+            keypair: keypair
         };
     } catch (error: any) {
         console.error("Error creating Solana wallet:", error);

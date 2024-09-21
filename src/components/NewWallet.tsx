@@ -2,7 +2,7 @@
 
 import CreatePassword from '@/components/CreatePassword';
 import MnemonicPhrase from '@/components/MnemonicPhrase';
-import { createNewWallet } from '@/utils/accounts';
+import { Account, createNewWallet } from '@/utils/accounts';
 import MnemonicPhraseGenerator from '@/utils/MnemonicPhraseGenerator';
 import React, { useState, useEffect } from 'react';
 
@@ -22,7 +22,12 @@ function NewWallet() {
     useEffect(() => {
         if (password && !mnemonicPhrase) {
             createSeedPhrase();
-            createNewWallet();
+            createNewWallet()
+                .then((newAccount) => {
+                    console.log("New Accounts:", newAccount);
+                    const arrayOfAccounts : Account[] = [newAccount];
+                    localStorage.setItem("accounts", JSON.stringify(arrayOfAccounts));
+                })
         }
     }, [password]);
 

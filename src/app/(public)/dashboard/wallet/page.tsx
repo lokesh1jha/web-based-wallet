@@ -194,6 +194,24 @@ const Wallet = () => {
     }
   };
 
+  const handleCreateAnotherWallet = async () => {
+    const newAccount = await createNewWallet(); // Await the promise
+    setAccounts(prevAccounts => {
+      const updatedAccounts = [...prevAccounts, newAccount];
+      localStorage.setItem("accounts", JSON.stringify(updatedAccounts));
+      return updatedAccounts;
+    });
+  
+    // Set the newly created account as the selected account
+    handleAccountChange(newAccount.name); // Ensure this updates the selected account
+  
+    toast({
+      title: "New Wallet Created",
+      description: "A new wallet has been created.",
+    });
+  };
+  
+
   if (isLoading) {
     return (
       <Card className="w-full max-w-md mx-auto mt-8">
@@ -243,23 +261,26 @@ const Wallet = () => {
             </Select>
 
             {selectedAccount && selectedAccount.wallets.map((wallet) => (
-              <Card key={wallet.publicKey} className="p-4 hover:bg-accent transition-colors">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-bold">{wallet.symbol}</span>
-                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(wallet.publicKey)}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                  </Button>
-                </div>
-                <div className="text-sm text-muted-foreground mb-2">{wallet.publicKey}</div>
-                <div className="flex justify-between items-center">
-                  <span>Balance: {wallet.balance} {wallet.symbol}</span>
-                  <Button variant="default" size="sm" onClick={() => handleSend(wallet.symbol)}>
-                    <Send className="h-4 w-4 mr-2" />
-                    Send
-                  </Button>
-                </div>
-              </Card>
+              <div>
+                <Card key={wallet.publicKey} className="p-4 hover:bg-accent transition-colors">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-bold">{wallet.symbol}</span>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(wallet.publicKey)}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy
+                    </Button>
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-2">{wallet.publicKey}</div>
+                  <div className="flex justify-between items-center">
+                    <span>Balance: {wallet.balance} {wallet.symbol}</span>
+                    <Button variant="default" size="sm" onClick={() => handleSend(wallet.symbol)}>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send
+                    </Button>
+                  </div>
+                </Card>
+                <Button onClick={handleCreateAnotherWallet} variant="outline" className="w-full">Create New Account</Button>
+              </div>
             ))}
           </CardContent>
         ) : (

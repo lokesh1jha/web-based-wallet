@@ -16,6 +16,8 @@ export default function CreateTokenPage() {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
+    console.log("event.currentTarget", event.currentTarget)
+
     // Implement token creation logic here
     console.log('Token creation submitted')
   }

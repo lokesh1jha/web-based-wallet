@@ -8,15 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, Copy, Send } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/hooks/use-toast"
 import { createNewWallet } from "@/utils/accounts"
 import { toast } from '@/components/hooks/use-toast'
-import { get } from "http"
 import { getSolanaBalance, sendSolTransaction, SOLANA_SYMBOL } from "@/utils/tokens/solana"
 import { getEthereumBalance, sendEthereumTransaction } from "@/utils/tokens/etherum"
+import { SendTokens } from "@/components/SendToken"
+import { Keypair } from "@solana/web3.js"
 
 
 interface Wallet {
@@ -32,6 +29,11 @@ interface Account {
   wallets: Wallet[]
 }
 
+interface SingleAccount {
+  keyPair: Keypair;
+  balance: number;
+}
+
 const Wallet = () => {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
@@ -41,10 +43,18 @@ const Wallet = () => {
   const [receiverAddress, setReceiverAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-
+  const [updateSelectedAccount, setUpdateSelectedAccount] = useState<string>('')
+  const [sendUsingAccount, setSendUsingAccount] = useState<SingleAccount | null>(null)
   useEffect(() => {
     fetchAccounts()
   }, [])
+
+  useEffect(() => {
+    if (updateSelectedAccount.length > 0) {
+      handleAccountChange(updateSelectedAccount)
+      setUpdateSelectedAccount('')
+    }
+  }, [updateSelectedAccount])
 
   const fetchAccounts = async () => {
     setIsLoading(true)
@@ -109,6 +119,8 @@ const Wallet = () => {
 
   const handleAccountChange = (accountName: string) => {
     const account = accounts.find(acc => acc.name === accountName)
+    console.log("handleAccountChange", accountName, account)
+
     if (account) {
       setSelectedAccount(account)
     }
@@ -123,26 +135,18 @@ const Wallet = () => {
   }
 
   const handleSend = async (symbol: string) => {
-    toast({
-      title: `Send ${symbol}`,
-      description: "This would open a dialog to send tokens.",
-    });
 
-    if (!selectedAccount || !amount || !receiverAddress || !symbol) return;
-
-    const amountToSend = parseFloat(amount);
-    const currentBalance = parseFloat(selectedAccount.wallets.find(wallet => wallet.symbol === symbol)?.balance || "0");
-
-    if (amountToSend > currentBalance) {
+    if (!selectedAccount || !symbol) {
       toast({
-        title: "Insufficient Balance",
-        description: "You don't have enough tokens to complete this transaction.",
+        title: "Insufficient Information",
+        description: "Some information is missing. Please try again.",
         variant: "destructive",
       });
       return;
     }
 
-    let response;
+    const currentBalance = parseFloat(selectedAccount.wallets.find(wallet => wallet.symbol === symbol)?.balance || "0");
+    
     const privateKey = selectedAccount.wallets.find(wallet => wallet.symbol === symbol)?.privateKey;
     if (!privateKey) {
       toast({
@@ -152,6 +156,15 @@ const Wallet = () => {
       });
       return;
     }
+    const privateKeyArray = Object.values(JSON.parse(privateKey));
+    const privateKeyString = `[${privateKeyArray.join(", ")}]`;
+
+    setSendUsingAccount({
+      keyPair: Keypair.fromSecretKey(new Uint8Array(JSON.parse(privateKeyString))),
+      balance: currentBalance,
+    })
+    setIsDialogOpen(true);
+    /*
     if (symbol === SOLANA_SYMBOL) {
       response = await sendSolTransaction(
         privateKey,
@@ -192,6 +205,7 @@ const Wallet = () => {
       setAmount("");
       setReceiverAddress("");
     }
+    */
   };
 
   const handleCreateAnotherWallet = async () => {
@@ -201,16 +215,14 @@ const Wallet = () => {
       localStorage.setItem("accounts", JSON.stringify(updatedAccounts));
       return updatedAccounts;
     });
-  
-    // Set the newly created account as the selected account
-    handleAccountChange(newAccount.name); // Ensure this updates the selected account
-  
+    setUpdateSelectedAccount(newAccount.name)
+
     toast({
       title: "New Wallet Created",
       description: "A new wallet has been created.",
     });
   };
-  
+
 
   if (isLoading) {
     return (
@@ -247,7 +259,7 @@ const Wallet = () => {
         </CardHeader>
         {accounts.length > 0 ? (
           <CardContent className="space-y-4">
-            <Select onValueChange={handleAccountChange} defaultValue={selectedAccount?.name}>
+            <Select onValueChange={handleAccountChange} defaultValue={selectedAccount?.name} >
               <SelectTrigger>
                 <SelectValue placeholder="Select an account" />
               </SelectTrigger>
@@ -279,9 +291,20 @@ const Wallet = () => {
                     </Button>
                   </div>
                 </Card>
-                <Button onClick={handleCreateAnotherWallet} variant="outline" className="w-full">Create New Account</Button>
               </div>
             ))}
+
+            <Button
+              onClick={handleCreateAnotherWallet}
+              variant="outline"
+              className="w-full bg-black text-white"
+            >Create New Account</Button>
+            {/* Send Token Dialog */}
+            {isDialogOpen && <SendTokens
+              selectedAccount={sendUsingAccount}
+              isDialogOpen={isDialogOpen}
+              setIsDialogOpen={setIsDialogOpen}
+            />}
           </CardContent>
         ) : (
           <CardContent className="space-y-4">

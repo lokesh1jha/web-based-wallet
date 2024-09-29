@@ -22,14 +22,22 @@ import {
 import { Button } from "./ui/button";
 import { Label } from "@radix-ui/react-label";
 import { Input } from "./ui/input";
+import bs58 from 'bs58';
 
 type Account = {
   address: string;
   balance: string;
 };
 
+
+interface SingleAccount {
+  keyPair: Keypair;
+  balance: number;
+}
+
+
 interface SendTokensProps {
-  selectedAccount: Account | null;
+  selectedAccount: SingleAccount | null;
   isDialogOpen: boolean;
   setIsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -45,23 +53,28 @@ export const SendTokens: React.FC<SendTokensProps> = ({
   const { connection } = useConnection();
 
   useEffect(() => {
-    fetchPrivateKey();
+    // fetchPrivateKey();
+    console.log("selectedAccount sendToken hit", selectedAccount);
+    if (selectedAccount?.keyPair?.secretKey) {
+      let secretKey: string = bs58.encode(new Uint8Array(selectedAccount?.keyPair?.secretKey));
+      setPrivateKey(secretKey);
+    }
   }, [selectedAccount]);
 
   // Fetch the private key of the selected account from localStorage
-  const fetchPrivateKey = async () => {
-    if (selectedAccount) {
-      const accounts = localStorage.getItem(`accounts`);
-      if (accounts) {
-        const parsedAccounts = JSON.parse(accounts);
-        for (const account of parsedAccounts) {
-          if (account.address === selectedAccount.address) {
-            setPrivateKey(account.privateKey);
-          }
-        }
-      }
-    }
-  };
+  // const fetchPrivateKey = async () => {
+  //   if (selectedAccount) {
+  //     const accounts = localStorage.getItem(`accounts`);
+  //     if (accounts) {
+  //       const parsedAccounts = JSON.parse(accounts);
+  //       for (const account of parsedAccounts) {
+  //         if (account.address === selectedAccount.address) {
+  //           setPrivateKey(account.privateKey);
+  //         }
+  //       }
+  //     }
+  //   }
+  // };
 
   // Transfer SOL tokens
   const transferTokens = async (
@@ -120,6 +133,7 @@ export const SendTokens: React.FC<SendTokensProps> = ({
 
   // Handle sending tokens
   const handleSend = async () => {
+    console.log("handleSend hit---", amount, receiverAddress, selectedAccount);
     if (!amount || !receiverAddress || !selectedAccount) {
       toast({
         title: "Invalid Input",
@@ -130,7 +144,7 @@ export const SendTokens: React.FC<SendTokensProps> = ({
     }
 
     const amountToSend = parseFloat(amount);
-    const currentBalance = parseFloat(selectedAccount.balance);
+    const currentBalance = typeof selectedAccount.balance === 'string'  ? parseFloat(selectedAccount.balance): selectedAccount.balance;
 
     if (isNaN(amountToSend) || amountToSend <= 0) {
       toast({

@@ -22,8 +22,8 @@ export default function CreateTokenPage() {
     console.log('Token creation submitted')
   }
 
-  const handleAuthorityToggle = () => {
-    setTotalFees(prev => prev + 0.1)
+  const handleAuthorityToggle = (checked: boolean) => {
+    setTotalFees((prev) => checked ? prev + 0.1 : prev - 0.1)
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

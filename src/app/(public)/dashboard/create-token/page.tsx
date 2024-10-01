@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { UploadDropzone } from '@/lib/uplodathing'
-import { toast } from 'sonner'
+import { UploadButton } from '@/lib/uplodathing'
+import { toast } from '@/components/hooks/use-toast'
+
 
 export default function CreateTokenPage() {
   const [tokenName, setTokenName] = useState('')
@@ -23,7 +24,6 @@ export default function CreateTokenPage() {
   const [revokeUpdate, setRevokeUpdate] = useState(false)
   const [revokeFreeze, setRevokeFreeze] = useState(false)
   const [revokeMint, setRevokeMint] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -56,7 +56,7 @@ export default function CreateTokenPage() {
         revokeUpdate,
         revokeFreeze,
         revokeMint,
-        imagePreview, // Store uploaded image URL here
+        imagePreview, 
       }
 
       console.log("Form Data Submitted:", formData)
@@ -77,18 +77,18 @@ export default function CreateTokenPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="tokenName">Name</Label>
-                <Input 
-                  id="tokenName" 
-                  placeholder="Token Name" 
+                <Input
+                  id="tokenName"
+                  placeholder="Token Name"
                   value={tokenName}
                   onChange={(e) => setTokenName(e.target.value)}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="tokenSymbol">Symbol</Label>
-                <Input 
-                  id="tokenSymbol" 
-                  placeholder="Token Symbol" 
+                <Input
+                  id="tokenSymbol"
+                  placeholder="Token Symbol"
                   value={tokenSymbol}
                   onChange={(e) => setTokenSymbol(e.target.value)}
                 />
@@ -97,9 +97,9 @@ export default function CreateTokenPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="decimals">Decimals</Label>
-                <Input 
-                  id="decimals" 
-                  type="number" 
+                <Input
+                  id="decimals"
+                  type="number"
                   placeholder="6"
                   value={decimals}
                   onChange={(e) => setDecimals(Number(e.target.value))}
@@ -107,9 +107,9 @@ export default function CreateTokenPage() {
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="supply">Supply</Label>
-                <Input 
-                  id="supply" 
-                  type="number" 
+                <Input
+                  id="supply"
+                  type="number"
                   placeholder="1"
                   value={supply}
                   onChange={(e) => setSupply(Number(e.target.value))}
@@ -123,37 +123,36 @@ export default function CreateTokenPage() {
                   {imagePreview ? (
                     <img src={imagePreview} alt="Token preview" className="w-full h-full object-contain" />
                   ) : (
-                    <UploadDropzone
+                    <UploadButton
                       endpoint="imageUploader"
-                      onClientUploadComplete={(res: any) => {
-                        setIsLoading(false)
-                        setImagePreview(res[0].url)
-                        toast.success("Upload Completed")
-                      }}
-                      onUploadProgress={() => setIsLoading(true)}
+                      onClientUploadComplete={(res) => {
+                        // Do something with the response
+                        console.log("Files: ", res);
+                        setImagePreview(res[0].url);
+                        toast({
+                          title: "Uploaded",
+                          description: "The image has been uploaded.",
+                        })
+                      }}   
                       onUploadError={(error: Error) => {
-                        setIsLoading(false)
-                        console.error(error)
-                        toast.error(`ERROR! ${error.message}`)
+                        // Do something with the error.
+                        console.error(error);
+                        toast({
+                          title: "Error",
+                          description: "The image could not be uploaded.",
+                        })
                       }}
-                      disabled={isLoading}
                     />
                   )}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*"
-                  />
                 </div>
                 <p className="text-xs text-gray-500">Most meme coins use a squared 1000x1000 logo</p>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="description">Description</Label>
-                <Textarea 
-                  id="description" 
-                  placeholder="Token Description" 
-                  className="h-32" 
+                <Textarea
+                  id="description"
+                  placeholder="Token Description"
+                  className="h-32"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
@@ -165,23 +164,23 @@ export default function CreateTokenPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="revokeUpdate">Revoke Update (Immutable)</Label>
-                  <Switch 
-                    id="revokeUpdate" 
-                    onCheckedChange={() => setRevokeUpdate(prev => !prev)} 
+                  <Switch
+                    id="revokeUpdate"
+                    onCheckedChange={() => setRevokeUpdate(prev => !prev)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="revokeFreeze">Revoke Freeze</Label>
-                  <Switch 
-                    id="revokeFreeze" 
-                    onCheckedChange={() => setRevokeFreeze(prev => !prev)} 
+                  <Switch
+                    id="revokeFreeze"
+                    onCheckedChange={() => setRevokeFreeze(prev => !prev)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="revokeMint">Revoke Mint</Label>
-                  <Switch 
-                    id="revokeMint" 
-                    onCheckedChange={() => setRevokeMint(prev => !prev)} 
+                  <Switch
+                    id="revokeMint"
+                    onCheckedChange={() => setRevokeMint(prev => !prev)}
                   />
                 </div>
               </div>

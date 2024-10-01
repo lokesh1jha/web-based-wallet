@@ -10,7 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { UploadDropzone } from '@/lib/uplodathing'
+import CustomUploadDropzone from '@/components/CustomUploadDropzone'
 import { toast } from 'sonner'
+
+
 
 export default function CreateTokenPage() {
   const [tokenName, setTokenName] = useState('')
@@ -64,6 +67,7 @@ export default function CreateTokenPage() {
       console.error("Token creation failed:", error)
     }
   }
+
 
   return (
     <div className="flex items-center justify-center">
@@ -119,32 +123,33 @@ export default function CreateTokenPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="image">Image</Label>
-                <div className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg border-gray-300 bg-gray-50 cursor-pointer">
+                <div className="flex items-center justify-center w-full h-32 cursor-pointer mt-10">
                   {imagePreview ? (
                     <img src={imagePreview} alt="Token preview" className="w-full h-full object-contain" />
                   ) : (
-                    <UploadDropzone
-                      endpoint="imageUploader"
-                      onClientUploadComplete={(res: any) => {
-                        setIsLoading(false)
-                        setImagePreview(res[0].url)
-                        toast.success("Upload Completed")
-                      }}
-                      onUploadProgress={() => setIsLoading(true)}
-                      onUploadError={(error: Error) => {
-                        setIsLoading(false)
-                        console.error(error)
-                        toast.error(`ERROR! ${error.message}`)
-                      }}
-                      disabled={isLoading}
+                    <CustomUploadDropzone
+                    isUploading={isLoading}
+                    ready={!isLoading}
+                    onClientUploadComplete={(res: any) => {
+                      setIsLoading(false)
+                      setImagePreview(res[0].url)
+                      toast.success("Upload Completed")
+                    }}
+                    onUploadProgress={() => setIsLoading(true)}
+                    onUploadError={(error: Error) => {
+                      setIsLoading(false)
+                      console.error(error)
+                      toast.error(`ERROR! ${error.message}`)
+                    }}
                     />
+                    
                   )}
-                  <input
+                  {/* <input
                     type="file"
                     ref={fileInputRef}
-                    className="hidden"
+                    className=" opacity-0"
                     accept="image/*"
-                  />
+                  /> */}
                 </div>
                 <p className="text-xs text-gray-500">Most meme coins use a squared 1000x1000 logo</p>
               </div>

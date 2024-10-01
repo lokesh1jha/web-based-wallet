@@ -1,17 +1,19 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Connection, Keypair, Transaction } from '@solana/web3.js'
-import { createMint } from '@solana/spl-token'
+import { Connection, Keypair, SystemProgram, Transaction } from '@solana/web3.js'
+import { createAssociatedTokenAccountInstruction, createInitializeMetadataPointerInstruction, createInitializeMintInstruction, createMint, createMintToInstruction, ExtensionType, getAssociatedTokenAddressSync, getMintLen, LENGTH_SIZE, TOKEN_2022_PROGRAM_ID, TYPE_SIZE } from '@solana/spl-token'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { UploadDropzone } from '@/lib/uplodathing'
-import CustomUploadDropzone from '@/components/CustomUploadDropzone'
-import { toast } from 'sonner'
+import { UploadButton } from '@/lib/uplodathing'
+import { toast } from '@/components/hooks/use-toast'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { toast as notify } from "sonner";
+import { createInitializeInstruction, pack } from '@solana/spl-token-metadata';
 
 
 
@@ -26,47 +28,111 @@ export default function CreateTokenPage() {
   const [revokeUpdate, setRevokeUpdate] = useState(false)
   const [revokeFreeze, setRevokeFreeze] = useState(false)
   const [revokeMint, setRevokeMint] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { connection } = useConnection();
+    const wallet = useWallet();
+
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
 
-    const connection = new Connection("https://api.devnet.solana.com")
-    const payer = Keypair.generate() // Or connect via wallet
-    const mintAuthority = payer.publicKey
-    const freezeAuthority = revokeFreeze ? null : payer.publicKey // Conditional freeze authority
-
-    try {
-      const mint = await createMint(
-        connection,
-        payer,
-        mintAuthority,
-        freezeAuthority,
-        decimals
-      )
-
-      console.log("Mint Address:", mint.toBase58())
-
-      const formData = {
-        tokenName,
-        tokenSymbol,
-        decimals,
-        supply,
-        description,
-        totalFees,
-        revokeUpdate,
-        revokeFreeze,
-        revokeMint,
-        imagePreview, // Store uploaded image URL here
+    notify.promise(
+      createToken()
+        .then((_item: any) => {
+          console.log("Token created successfully");
+        })
+        .catch((error: any) => {
+          console.log(error);
+        }),
+      {
+        loading: `Creating Token ...`,
+        success: `Congratulations! Token created successfully`,
+        error: "Failed to create token. Please try again.",
       }
-
-      console.log("Form Data Submitted:", formData)
-    } catch (error) {
-      console.error("Token creation failed:", error)
-    }
+    );
   }
+
+
+  async function createToken() {
+    if (!wallet || !wallet.publicKey) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet",
+      })
+      throw new Error('Wallet not connected');
+    }
+    const mintKeypair = Keypair.generate();
+    const metadata = {
+        mint: mintKeypair.publicKey,
+        name: tokenName,
+        symbol: tokenSymbol,
+        uri: imagePreview || 'https://cdn.100xdevs.com/metadata.json',
+        additionalMetadata: [],
+    };
+
+    const mintLen = getMintLen([ExtensionType.MetadataPointer]);
+    const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(metadata).length;
+
+    const lamports = await connection.getMinimumBalanceForRentExemption(mintLen + metadataLen);
+
+    const transaction = new Transaction().add(
+        SystemProgram.createAccount({
+            fromPubkey: wallet.publicKey,
+            newAccountPubkey: mintKeypair.publicKey,
+            space: mintLen,
+            lamports,
+            programId: TOKEN_2022_PROGRAM_ID,
+        }),
+        createInitializeMetadataPointerInstruction(mintKeypair.publicKey, wallet.publicKey, mintKeypair.publicKey, TOKEN_2022_PROGRAM_ID),
+        createInitializeMintInstruction(mintKeypair.publicKey, 9, wallet.publicKey, null, TOKEN_2022_PROGRAM_ID),
+        createInitializeInstruction({
+            programId: TOKEN_2022_PROGRAM_ID,
+            mint: mintKeypair.publicKey,
+            metadata: mintKeypair.publicKey,
+            name: metadata.name,
+            symbol: metadata.symbol,
+            uri: metadata.uri,
+            mintAuthority: wallet.publicKey,
+            updateAuthority: wallet.publicKey,
+        }),
+    );
+        
+    transaction.feePayer = wallet.publicKey;
+    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    transaction.partialSign(mintKeypair);
+
+    await wallet.sendTransaction(transaction, connection);
+
+    console.log(`Token mint created at ${mintKeypair.publicKey.toBase58()}`);
+    const associatedToken = getAssociatedTokenAddressSync(
+        mintKeypair.publicKey,
+        wallet.publicKey,
+        false,
+        TOKEN_2022_PROGRAM_ID,
+    );
+
+    console.log(associatedToken.toBase58());
+
+    const transaction2 = new Transaction().add(
+        createAssociatedTokenAccountInstruction(
+            wallet.publicKey,
+            associatedToken,
+            wallet.publicKey,
+            mintKeypair.publicKey,
+            TOKEN_2022_PROGRAM_ID,
+        ),
+    );
+
+    await wallet.sendTransaction(transaction2, connection);
+
+    const transaction3 = new Transaction().add(
+        createMintToInstruction(mintKeypair.publicKey, associatedToken, wallet.publicKey, 1000000000, [], TOKEN_2022_PROGRAM_ID)
+    );
+
+    await wallet.sendTransaction(transaction3, connection);
+
+    console.log("Minted!")
+}
 
 
   return (
@@ -81,18 +147,18 @@ export default function CreateTokenPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="tokenName">Name</Label>
-                <Input 
-                  id="tokenName" 
-                  placeholder="Token Name" 
+                <Input
+                  id="tokenName"
+                  placeholder="Token Name"
                   value={tokenName}
                   onChange={(e) => setTokenName(e.target.value)}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="tokenSymbol">Symbol</Label>
-                <Input 
-                  id="tokenSymbol" 
-                  placeholder="Token Symbol" 
+                <Input
+                  id="tokenSymbol"
+                  placeholder="Token Symbol"
                   value={tokenSymbol}
                   onChange={(e) => setTokenSymbol(e.target.value)}
                 />
@@ -101,9 +167,9 @@ export default function CreateTokenPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="decimals">Decimals</Label>
-                <Input 
-                  id="decimals" 
-                  type="number" 
+                <Input
+                  id="decimals"
+                  type="number"
                   placeholder="6"
                   value={decimals}
                   onChange={(e) => setDecimals(Number(e.target.value))}
@@ -111,9 +177,9 @@ export default function CreateTokenPage() {
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="supply">Supply</Label>
-                <Input 
-                  id="supply" 
-                  type="number" 
+                <Input
+                  id="supply"
+                  type="number"
                   placeholder="1"
                   value={supply}
                   onChange={(e) => setSupply(Number(e.target.value))}
@@ -127,38 +193,37 @@ export default function CreateTokenPage() {
                   {imagePreview ? (
                     <img src={imagePreview} alt="Token preview" className="w-full h-full object-contain" />
                   ) : (
-                    <CustomUploadDropzone
-                    isUploading={isLoading}
-                    ready={!isLoading}
-                    onClientUploadComplete={(res: any) => {
-                      setIsLoading(false)
-                      setImagePreview(res[0].url)
-                      toast.success("Upload Completed")
-                    }}
-                    onUploadProgress={() => setIsLoading(true)}
-                    onUploadError={(error: Error) => {
-                      setIsLoading(false)
-                      console.error(error)
-                      toast.error(`ERROR! ${error.message}`)
-                    }}
+                    <UploadButton
+                      endpoint="imageUploader"
+                      onClientUploadComplete={(res) => {
+                        // Do something with the response
+                        console.log("Files: ", res);
+                        setImagePreview(res[0].url);
+                        toast({
+                          title: "Uploaded",
+                          description: "The image has been uploaded.",
+                        })
+                      }}   
+                      onUploadError={(error: Error) => {
+                        // Do something with the error.
+                        console.error(error);
+                        toast({
+                          title: "Error",
+                          description: "The image could not be uploaded.",
+                        })
+                      }}
                     />
                     
                   )}
-                  {/* <input
-                    type="file"
-                    ref={fileInputRef}
-                    className=" opacity-0"
-                    accept="image/*"
-                  /> */}
                 </div>
                 <p className="text-xs text-gray-500">Most meme coins use a squared 1000x1000 logo</p>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="description">Description</Label>
-                <Textarea 
-                  id="description" 
-                  placeholder="Token Description" 
-                  className="h-32" 
+                <Textarea
+                  id="description"
+                  placeholder="Token Description"
+                  className="h-32"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
@@ -170,23 +235,23 @@ export default function CreateTokenPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="revokeUpdate">Revoke Update (Immutable)</Label>
-                  <Switch 
-                    id="revokeUpdate" 
-                    onCheckedChange={() => setRevokeUpdate(prev => !prev)} 
+                  <Switch
+                    id="revokeUpdate"
+                    onCheckedChange={() => setRevokeUpdate(prev => !prev)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="revokeFreeze">Revoke Freeze</Label>
-                  <Switch 
-                    id="revokeFreeze" 
-                    onCheckedChange={() => setRevokeFreeze(prev => !prev)} 
+                  <Switch
+                    id="revokeFreeze"
+                    onCheckedChange={() => setRevokeFreeze(prev => !prev)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="revokeMint">Revoke Mint</Label>
-                  <Switch 
-                    id="revokeMint" 
-                    onCheckedChange={() => setRevokeMint(prev => !prev)} 
+                  <Switch
+                    id="revokeMint"
+                    onCheckedChange={() => setRevokeMint(prev => !prev)}
                   />
                 </div>
               </div>

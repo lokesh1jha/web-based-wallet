@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Connection, Keypair, Transaction } from '@solana/web3.js'
-import { createMint } from '@solana/spl-token'
+import { Connection, Keypair, SystemProgram, Transaction } from '@solana/web3.js'
+import { createAssociatedTokenAccountInstruction, createInitializeMetadataPointerInstruction, createInitializeMintInstruction, createMint, createMintToInstruction, ExtensionType, getAssociatedTokenAddressSync, getMintLen, LENGTH_SIZE, TOKEN_2022_PROGRAM_ID, TYPE_SIZE } from '@solana/spl-token'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { UploadButton } from '@/lib/uplodathing'
 import { toast } from '@/components/hooks/use-toast'
-
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { toast as notify } from "sonner";
+import { createInitializeInstruction, pack } from '@solana/spl-token-metadata';
 
 export default function CreateTokenPage() {
   const [tokenName, setTokenName] = useState('')
@@ -25,45 +27,111 @@ export default function CreateTokenPage() {
   const [revokeFreeze, setRevokeFreeze] = useState(false)
   const [revokeMint, setRevokeMint] = useState(false)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { connection } = useConnection();
+    const wallet = useWallet();
+
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
 
-    const connection = new Connection("https://api.devnet.solana.com")
-    const payer = Keypair.generate() // Or connect via wallet
-    const mintAuthority = payer.publicKey
-    const freezeAuthority = revokeFreeze ? null : payer.publicKey // Conditional freeze authority
-
-    try {
-      const mint = await createMint(
-        connection,
-        payer,
-        mintAuthority,
-        freezeAuthority,
-        decimals
-      )
-
-      console.log("Mint Address:", mint.toBase58())
-
-      const formData = {
-        tokenName,
-        tokenSymbol,
-        decimals,
-        supply,
-        description,
-        totalFees,
-        revokeUpdate,
-        revokeFreeze,
-        revokeMint,
-        imagePreview, 
+    notify.promise(
+      createToken()
+        .then((_item: any) => {
+          console.log("Token created successfully");
+        })
+        .catch((error: any) => {
+          console.log(error);
+        }),
+      {
+        loading: `Creating Token ...`,
+        success: `Congratulations! Token created successfully`,
+        error: "Failed to create token. Please try again.",
       }
-
-      console.log("Form Data Submitted:", formData)
-    } catch (error) {
-      console.error("Token creation failed:", error)
-    }
+    );
   }
+
+
+  async function createToken() {
+    if (!wallet || !wallet.publicKey) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet",
+      })
+      throw new Error('Wallet not connected');
+    }
+    const mintKeypair = Keypair.generate();
+    const metadata = {
+        mint: mintKeypair.publicKey,
+        name: tokenName,
+        symbol: tokenSymbol,
+        uri: imagePreview || 'https://cdn.100xdevs.com/metadata.json',
+        additionalMetadata: [],
+    };
+
+    const mintLen = getMintLen([ExtensionType.MetadataPointer]);
+    const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(metadata).length;
+
+    const lamports = await connection.getMinimumBalanceForRentExemption(mintLen + metadataLen);
+
+    const transaction = new Transaction().add(
+        SystemProgram.createAccount({
+            fromPubkey: wallet.publicKey,
+            newAccountPubkey: mintKeypair.publicKey,
+            space: mintLen,
+            lamports,
+            programId: TOKEN_2022_PROGRAM_ID,
+        }),
+        createInitializeMetadataPointerInstruction(mintKeypair.publicKey, wallet.publicKey, mintKeypair.publicKey, TOKEN_2022_PROGRAM_ID),
+        createInitializeMintInstruction(mintKeypair.publicKey, 9, wallet.publicKey, null, TOKEN_2022_PROGRAM_ID),
+        createInitializeInstruction({
+            programId: TOKEN_2022_PROGRAM_ID,
+            mint: mintKeypair.publicKey,
+            metadata: mintKeypair.publicKey,
+            name: metadata.name,
+            symbol: metadata.symbol,
+            uri: metadata.uri,
+            mintAuthority: wallet.publicKey,
+            updateAuthority: wallet.publicKey,
+        }),
+    );
+        
+    transaction.feePayer = wallet.publicKey;
+    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    transaction.partialSign(mintKeypair);
+
+    await wallet.sendTransaction(transaction, connection);
+
+    console.log(`Token mint created at ${mintKeypair.publicKey.toBase58()}`);
+    const associatedToken = getAssociatedTokenAddressSync(
+        mintKeypair.publicKey,
+        wallet.publicKey,
+        false,
+        TOKEN_2022_PROGRAM_ID,
+    );
+
+    console.log(associatedToken.toBase58());
+
+    const transaction2 = new Transaction().add(
+        createAssociatedTokenAccountInstruction(
+            wallet.publicKey,
+            associatedToken,
+            wallet.publicKey,
+            mintKeypair.publicKey,
+            TOKEN_2022_PROGRAM_ID,
+        ),
+    );
+
+    await wallet.sendTransaction(transaction2, connection);
+
+    const transaction3 = new Transaction().add(
+        createMintToInstruction(mintKeypair.publicKey, associatedToken, wallet.publicKey, 1000000000, [], TOKEN_2022_PROGRAM_ID)
+    );
+
+    await wallet.sendTransaction(transaction3, connection);
+
+    console.log("Minted!")
+}
+
 
   return (
     <div className="flex items-center justify-center">

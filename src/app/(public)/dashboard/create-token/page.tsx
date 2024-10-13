@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { UploadDropzone } from '@/lib/uplodathing'
 import CustomUploadDropzone from '@/components/CustomUploadDropzone'
 import { toast } from 'sonner'
-
+import Image from 'next/image'
+import { Pencil } from 'lucide-react'
 
 
 export default function CreateTokenPage() {
@@ -27,11 +27,41 @@ export default function CreateTokenPage() {
   const [revokeFreeze, setRevokeFreeze] = useState(false)
   const [revokeMint, setRevokeMint] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({
+    tokenName: '',
+    tokenSymbol: '',
+    supply: '',
+    decimals: '',
+    image: '',
+    description: ''
+  })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const toggleEdit = async () => {
+    setIsEditing((current) => !current)
+    setImagePreview(null)
+  }
+
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+
+    // Validate required fields
+    const newErrors = {
+      tokenName: tokenName ? '' : 'Token Name is required',
+      tokenSymbol: tokenSymbol ? '' : 'Token Symbol is required',
+      supply: supply > 0 ? '' : 'Supply is required',
+      decimals: decimals >= 0 ? '' : 'Decimals is required',
+      image: imagePreview ? '' : 'Image is required',
+      description: description ? '' : 'Description is required',
+    }
+    setErrors(newErrors)
+
+    if (Object.values(newErrors).some(error => error)) {
+      toast.error('Please fill in all required fields.')
+      return
+    }
 
     const connection = new Connection("https://api.devnet.solana.com")
     const payer = Keypair.generate() // Or connect via wallet
@@ -39,6 +69,19 @@ export default function CreateTokenPage() {
     const freezeAuthority = revokeFreeze ? null : payer.publicKey // Conditional freeze authority
 
     try {
+      // const airdropSignature = await connection.requestAirdrop(payer.publicKey, 2e9);
+
+      // const latestBlockhash = await connection.getLatestBlockhash(); // Get the latest blockhash for confirmation
+      // await connection.confirmTransaction(
+      //   {
+      //     signature: airdropSignature,
+      //     blockhash: latestBlockhash.blockhash,
+      //     lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+      //   },
+      //   "confirmed"
+      // );
+      // console.log('Airdrop successful!');
+
       const mint = await createMint(
         connection,
         payer,
@@ -65,6 +108,7 @@ export default function CreateTokenPage() {
       console.log("Form Data Submitted:", formData)
     } catch (error) {
       console.error("Token creation failed:", error)
+      toast.error(`Token creation failed: ${error}`)
     }
   }
 
@@ -86,7 +130,8 @@ export default function CreateTokenPage() {
                   placeholder="Token Name" 
                   value={tokenName}
                   onChange={(e) => setTokenName(e.target.value)}
-                />
+                  />
+                  {errors.tokenName && <p className="text-red-500 text-xs">{errors.tokenName}</p>}
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="tokenSymbol">Symbol</Label>
@@ -96,6 +141,7 @@ export default function CreateTokenPage() {
                   value={tokenSymbol}
                   onChange={(e) => setTokenSymbol(e.target.value)}
                 />
+                {errors.tokenSymbol && <p className="text-red-500 text-xs">{errors.tokenSymbol}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -108,6 +154,7 @@ export default function CreateTokenPage() {
                   value={decimals}
                   onChange={(e) => setDecimals(Number(e.target.value))}
                 />
+                {errors.decimals && <p className="text-red-500 text-xs">{errors.decimals}</p>}
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="supply">Supply</Label>
@@ -118,31 +165,45 @@ export default function CreateTokenPage() {
                   value={supply}
                   onChange={(e) => setSupply(Number(e.target.value))}
                 />
+                {errors.supply && <p className="text-red-500 text-xs">{errors.supply}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="image">Image</Label>
+                <div className='flex items-center justify-between'>
+                  <Label htmlFor="image">Image</Label>
+                  <div>
+                    {!isEditing && imagePreview && (
+                    <>
+                      <Pencil className="lg:h-4 lg:w-4 w-3 h-3" onClick={toggleEdit} />
+                    </>
+                  )}
+                  </div>
+                </div>
                 <div className="flex items-center justify-center w-full h-32 cursor-pointer mt-10">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Token preview" className="w-full h-full object-contain" />
+                    <Image
+                      src={imagePreview}
+                      alt="Token preview"
+                      width={1000}
+                      height={1000}
+                      className="w-full h-full object-contain"
+                    />
                   ) : (
                     <CustomUploadDropzone
-                    isUploading={isLoading}
-                    ready={!isLoading}
-                    onClientUploadComplete={(res: any) => {
-                      setIsLoading(false)
-                      setImagePreview(res[0].url)
-                      toast.success("Upload Completed")
-                    }}
-                    onUploadProgress={() => setIsLoading(true)}
-                    onUploadError={(error: Error) => {
-                      setIsLoading(false)
-                      console.error(error)
-                      toast.error(`ERROR! ${error.message}`)
-                    }}
-                    />
-                    
+                      isUploading={isLoading}
+                      onClientUploadComplete={(res: any) => {
+                        setIsLoading(false)
+                        setImagePreview(res[0].url)
+                        toast.success("Upload Completed")
+                      }}
+                      onUploadError={(error: Error) => {
+                        setIsLoading(false)
+                        console.error(error)
+                        toast.error(`ERROR! ${error.message}`)
+                      }}
+                      />
+
                   )}
                   {/* <input
                     type="file"
@@ -151,6 +212,7 @@ export default function CreateTokenPage() {
                     accept="image/*"
                   /> */}
                 </div>
+                {errors.image && <p className="text-red-500 text-xs">{errors.image}</p>}
                 <p className="text-xs text-gray-500">Most meme coins use a squared 1000x1000 logo</p>
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -162,6 +224,7 @@ export default function CreateTokenPage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
+                {errors.description && <p className="text-red-500 text-xs">{errors.description}</p>}
               </div>
             </div>
             <div>

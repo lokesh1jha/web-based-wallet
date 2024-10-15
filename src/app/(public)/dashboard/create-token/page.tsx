@@ -1,18 +1,22 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Connection, Keypair, Transaction } from '@solana/web3.js'
-import { createMint } from '@solana/spl-token'
+import { useState } from 'react'
+import { Keypair, SystemProgram, Transaction } from '@solana/web3.js'
+import { createAssociatedTokenAccountInstruction, createInitializeMetadataPointerInstruction, createInitializeMintInstruction, createMint, createMintToInstruction, ExtensionType, getAssociatedTokenAddressSync, getMintLen, LENGTH_SIZE, TOKEN_2022_PROGRAM_ID, TYPE_SIZE } from '@solana/spl-token'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import CustomUploadDropzone from '@/components/CustomUploadDropzone'
-import { toast } from 'sonner'
-import Image from 'next/image'
+import { toast } from '@/components/hooks/use-toast'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { toast as notify } from "sonner";
+import { createInitializeInstruction, pack } from '@solana/spl-token-metadata';
 import { Pencil } from 'lucide-react'
+import Image from 'next/image'
+import CustomUploadDropzone from '@/components/CustomUploadDropzone'
+
 
 
 export default function CreateTokenPage() {
@@ -37,17 +41,19 @@ export default function CreateTokenPage() {
     description: ''
   })
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const toggleEdit = async () => {
     setIsEditing((current) => !current)
     setImagePreview(null)
   }
 
+  const { connection } = useConnection();
+  const wallet = useWallet();
+
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
+    event.preventDefault();
 
-    // Validate required fields
+        // Validate required fields
     const newErrors = {
       tokenName: tokenName ? '' : 'Token Name is required',
       tokenSymbol: tokenSymbol ? '' : 'Token Symbol is required',
@@ -58,59 +64,114 @@ export default function CreateTokenPage() {
     }
     setErrors(newErrors)
 
-    if (Object.values(newErrors).some(error => error)) {
-      toast.error('Please fill in all required fields.')
-      return
+    const missingFields = Object.values(newErrors).filter(error => error !== '');
+
+    if (missingFields.length > 0) {
+      toast({
+        title: `Please fill in all required fields`,
+        description: `Missing fields: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
     }
 
-    const connection = new Connection("https://api.devnet.solana.com")
-    const payer = Keypair.generate() // Or connect via wallet
-    const mintAuthority = payer.publicKey
-    const freezeAuthority = revokeFreeze ? null : payer.publicKey // Conditional freeze authority
-
-    try {
-      // const airdropSignature = await connection.requestAirdrop(payer.publicKey, 2e9);
-
-      // const latestBlockhash = await connection.getLatestBlockhash(); // Get the latest blockhash for confirmation
-      // await connection.confirmTransaction(
-      //   {
-      //     signature: airdropSignature,
-      //     blockhash: latestBlockhash.blockhash,
-      //     lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
-      //   },
-      //   "confirmed"
-      // );
-      // console.log('Airdrop successful!');
-
-      const mint = await createMint(
-        connection,
-        payer,
-        mintAuthority,
-        freezeAuthority,
-        decimals
-      )
-
-      console.log("Mint Address:", mint.toBase58())
-
-      const formData = {
-        tokenName,
-        tokenSymbol,
-        decimals,
-        supply,
-        description,
-        totalFees,
-        revokeUpdate,
-        revokeFreeze,
-        revokeMint,
-        imagePreview, // Store uploaded image URL here
+    notify.promise(
+      createToken()
+        .then((_item: any) => {
+          console.log("Token created successfully");
+        })
+        .catch((error: any) => {
+          console.log(error);
+        }),
+      {
+        loading: `Creating Token ...`,
+        success: `Congratulations! Token created successfully`,
+        error: "Failed to create token. Please try again.",
       }
-
-      console.log("Form Data Submitted:", formData)
-    } catch (error) {
-      console.error("Token creation failed:", error)
-      toast.error(`Token creation failed: ${error}`)
-    }
+    );
   }
+
+
+  async function createToken() {
+    if (!wallet || !wallet.publicKey) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet",
+      })
+      throw new Error('Wallet not connected');
+    }
+    const mintKeypair = Keypair.generate();
+    const metadata = {
+        mint: mintKeypair.publicKey,
+        name: tokenName,
+        symbol: tokenSymbol,
+        uri: imagePreview || 'https://cdn.100xdevs.com/metadata.json',
+        additionalMetadata: [],
+    };
+
+    const mintLen = getMintLen([ExtensionType.MetadataPointer]);
+    const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(metadata).length;
+
+    const lamports = await connection.getMinimumBalanceForRentExemption(mintLen + metadataLen);
+
+    const transaction = new Transaction().add(
+        SystemProgram.createAccount({
+            fromPubkey: wallet.publicKey,
+            newAccountPubkey: mintKeypair.publicKey,
+            space: mintLen,
+            lamports,
+            programId: TOKEN_2022_PROGRAM_ID,
+        }),
+        createInitializeMetadataPointerInstruction(mintKeypair.publicKey, wallet.publicKey, mintKeypair.publicKey, TOKEN_2022_PROGRAM_ID),
+        createInitializeMintInstruction(mintKeypair.publicKey, 9, wallet.publicKey, null, TOKEN_2022_PROGRAM_ID),
+        createInitializeInstruction({
+            programId: TOKEN_2022_PROGRAM_ID,
+            mint: mintKeypair.publicKey,
+            metadata: mintKeypair.publicKey,
+            name: metadata.name,
+            symbol: metadata.symbol,
+            uri: metadata.uri,
+            mintAuthority: wallet.publicKey,
+            updateAuthority: wallet.publicKey,
+        }),
+    );
+
+    transaction.feePayer = wallet.publicKey;
+    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    transaction.partialSign(mintKeypair);
+
+    await wallet.sendTransaction(transaction, connection);
+
+    console.log(`Token mint created at ${mintKeypair.publicKey.toBase58()}`);
+    const associatedToken = getAssociatedTokenAddressSync(
+        mintKeypair.publicKey,
+        wallet.publicKey,
+        false,
+        TOKEN_2022_PROGRAM_ID,
+    );
+
+    console.log(associatedToken.toBase58());
+
+    const transaction2 = new Transaction().add(
+        createAssociatedTokenAccountInstruction(
+            wallet.publicKey,
+            associatedToken,
+            wallet.publicKey,
+            mintKeypair.publicKey,
+            TOKEN_2022_PROGRAM_ID,
+        ),
+    );
+
+    await wallet.sendTransaction(transaction2, connection);
+
+    const transaction3 = new Transaction().add(
+        createMintToInstruction(mintKeypair.publicKey, associatedToken, wallet.publicKey, 1000000000, [], TOKEN_2022_PROGRAM_ID)
+    );
+
+    await wallet.sendTransaction(transaction3, connection);
+
+    console.log("Minted!")
+}
 
 
   return (
@@ -125,47 +186,43 @@ export default function CreateTokenPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="tokenName">Name</Label>
-                <Input 
-                  id="tokenName" 
-                  placeholder="Token Name" 
+                <Input
+                  id="tokenName"
+                  placeholder="Token Name"
                   value={tokenName}
                   onChange={(e) => setTokenName(e.target.value)}
-                  />
-                  {errors.tokenName && <p className="text-red-500 text-xs">{errors.tokenName}</p>}
+                />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="tokenSymbol">Symbol</Label>
-                <Input 
-                  id="tokenSymbol" 
-                  placeholder="Token Symbol" 
+                <Input
+                  id="tokenSymbol"
+                  placeholder="Token Symbol"
                   value={tokenSymbol}
                   onChange={(e) => setTokenSymbol(e.target.value)}
                 />
-                {errors.tokenSymbol && <p className="text-red-500 text-xs">{errors.tokenSymbol}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="decimals">Decimals</Label>
-                <Input 
-                  id="decimals" 
-                  type="number" 
+                <Input
+                  id="decimals"
+                  type="number"
                   placeholder="6"
                   value={decimals}
                   onChange={(e) => setDecimals(Number(e.target.value))}
                 />
-                {errors.decimals && <p className="text-red-500 text-xs">{errors.decimals}</p>}
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="supply">Supply</Label>
-                <Input 
-                  id="supply" 
-                  type="number" 
+                <Input
+                  id="supply"
+                  type="number"
                   placeholder="1"
                   value={supply}
                   onChange={(e) => setSupply(Number(e.target.value))}
                 />
-                {errors.supply && <p className="text-red-500 text-xs">{errors.supply}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -195,36 +252,35 @@ export default function CreateTokenPage() {
                       onClientUploadComplete={(res: any) => {
                         setIsLoading(false)
                         setImagePreview(res[0].url)
-                        toast.success("Upload Completed")
+                        toast({
+                          title: 'Image uploaded',
+                          description: 'Your image has been uploaded successfully.',
+                          variant: "default"
+                        })
                       }}
                       onUploadError={(error: Error) => {
                         setIsLoading(false)
                         console.error(error)
-                        toast.error(`ERROR! ${error.message}`)
+                        toast({
+                          title: 'Error uploading image',
+                          description: error.message,
+                          variant: "destructive"
+                        })
                       }}
-                      />
-
+                    />
                   )}
-                  {/* <input
-                    type="file"
-                    ref={fileInputRef}
-                    className=" opacity-0"
-                    accept="image/*"
-                  /> */}
                 </div>
-                {errors.image && <p className="text-red-500 text-xs">{errors.image}</p>}
                 <p className="text-xs text-gray-500">Most meme coins use a squared 1000x1000 logo</p>
               </div>
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="description">Description</Label>
-                <Textarea 
-                  id="description" 
-                  placeholder="Token Description" 
-                  className="h-32" 
+                <Textarea
+                  id="description"
+                  placeholder="Token Description"
+                  className="h-32"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
-                {errors.description && <p className="text-red-500 text-xs">{errors.description}</p>}
               </div>
             </div>
             <div>
@@ -233,23 +289,23 @@ export default function CreateTokenPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="revokeUpdate">Revoke Update (Immutable)</Label>
-                  <Switch 
-                    id="revokeUpdate" 
-                    onCheckedChange={() => setRevokeUpdate(prev => !prev)} 
+                  <Switch
+                    id="revokeUpdate"
+                    onCheckedChange={() => setRevokeUpdate(prev => !prev)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="revokeFreeze">Revoke Freeze</Label>
-                  <Switch 
-                    id="revokeFreeze" 
-                    onCheckedChange={() => setRevokeFreeze(prev => !prev)} 
+                  <Switch
+                    id="revokeFreeze"
+                    onCheckedChange={() => setRevokeFreeze(prev => !prev)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="revokeMint">Revoke Mint</Label>
-                  <Switch 
-                    id="revokeMint" 
-                    onCheckedChange={() => setRevokeMint(prev => !prev)} 
+                  <Switch
+                    id="revokeMint"
+                    onCheckedChange={() => setRevokeMint(prev => !prev)}
                   />
                 </div>
               </div>

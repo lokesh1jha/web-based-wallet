@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Sniff Wallet
 
-## Getting Started
+## Introduction
 
-First, run the development server:
+Sniff Wallet is a user-friendly web-based platform that allows users to generate secure mnemonic phrases, create multiple cryptocurrency wallets, and view the corresponding public keys for each wallet.
 
-```bash
+## Contributing
+Contributions are welcome! Feel free to open an issue or submit a pull request or pick a task from open issues.
+
+## Getting started
+To get started with Sniff wallet, follow these steps:
+
+1. Fork the repository, this repository will be created in your GitHub
+2. Clone the repository
+```
+git clone git@github.com:lokesh1jha/web-based-wallet.git
+cd web-based-wallet
+```
+3. Install dependencies: Ensure you have node installed. Then, run:
+```
+npm install
+```
+4. Run development server:
+```
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+5. Visit [Alchemy](https://www.alchemy.com/), sign up => create app => get api key
+
+```
+MAINET_ETH_PROVIDER_URL=
+MAINET_SOL_PROVIDER_URL=
+
+
+#DEVNET
+DEVNET_ETH_SEPOLIA_PROVIDER_URL=
+DEVNET_SOL_PROVIDER_URL=
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+6. Visit [UploadThing](https://uploadthing.com/), Sign in
+```
+UPLOADTHING_TOKEN='eyJhcGlLZXkiOiJza19saXZlX2U1ZjQ1NGI1NWY1NTlkNTczYzMwMjI1ZmMzOGY4MTZkZTMzMWYyYTNkNTA5Mzc3ODUzYzA1NjEwMTg2YjMwNzMiLCJhcHBJZCI6IjdreWZhZ3J1ZzUiLCJyZWdpb25zIjpbInNlYTEiXX0='
+UPLOADTHING_APP_ID=
+```

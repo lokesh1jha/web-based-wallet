@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Connection, Keypair, SystemProgram, Transaction } from '@solana/web3.js'
+import { useState } from 'react'
+import { Keypair, SystemProgram, Transaction } from '@solana/web3.js'
 import { createAssociatedTokenAccountInstruction, createInitializeMetadataPointerInstruction, createInitializeMintInstruction, createMint, createMintToInstruction, ExtensionType, getAssociatedTokenAddressSync, getMintLen, LENGTH_SIZE, TOKEN_2022_PROGRAM_ID, TYPE_SIZE } from '@solana/spl-token'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { UploadButton } from '@/lib/uplodathing'
 import { toast } from '@/components/hooks/use-toast'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { toast as notify } from "sonner";
 import { createInitializeInstruction, pack } from '@solana/spl-token-metadata';
+import { Pencil } from 'lucide-react'
+import Image from 'next/image'
+import CustomUploadDropzone from '@/components/CustomUploadDropzone'
 
 
 
@@ -28,13 +30,50 @@ export default function CreateTokenPage() {
   const [revokeUpdate, setRevokeUpdate] = useState(false)
   const [revokeFreeze, setRevokeFreeze] = useState(false)
   const [revokeMint, setRevokeMint] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({
+    tokenName: '',
+    tokenSymbol: '',
+    supply: '',
+    decimals: '',
+    image: '',
+    description: ''
+  })
+
+  const toggleEdit = async () => {
+    setIsEditing((current) => !current)
+    setImagePreview(null)
+  }
 
   const { connection } = useConnection();
-    const wallet = useWallet();
+  const wallet = useWallet();
 
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
+    event.preventDefault();
+
+        // Validate required fields
+    const newErrors = {
+      tokenName: tokenName ? '' : 'Token Name is required',
+      tokenSymbol: tokenSymbol ? '' : 'Token Symbol is required',
+      supply: supply > 0 ? '' : 'Supply is required',
+      decimals: decimals >= 0 ? '' : 'Decimals is required',
+      image: imagePreview ? '' : 'Image is required',
+      description: description ? '' : 'Description is required',
+    }
+    setErrors(newErrors)
+
+    const missingFields = Object.values(newErrors).filter(error => error !== '');
+
+    if (missingFields.length > 0) {
+      toast({
+        title: `Please fill in all required fields`,
+        description: `Missing fields: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     notify.promise(
       createToken()
@@ -96,7 +135,7 @@ export default function CreateTokenPage() {
             updateAuthority: wallet.publicKey,
         }),
     );
-        
+
     transaction.feePayer = wallet.publicKey;
     transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
     transaction.partialSign(mintKeypair);
@@ -188,32 +227,47 @@ export default function CreateTokenPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="image">Image</Label>
+                <div className='flex items-center justify-between'>
+                  <Label htmlFor="image">Image</Label>
+                  <div>
+                    {!isEditing && imagePreview && (
+                    <>
+                      <Pencil className="lg:h-4 lg:w-4 w-3 h-3" onClick={toggleEdit} />
+                    </>
+                  )}
+                  </div>
+                </div>
                 <div className="flex items-center justify-center w-full h-32 cursor-pointer mt-10">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Token preview" className="w-full h-full object-contain" />
+                    <Image
+                      src={imagePreview}
+                      alt="Token preview"
+                      width={1000}
+                      height={1000}
+                      className="w-full h-full object-contain"
+                    />
                   ) : (
-                    <UploadButton
-                      endpoint="imageUploader"
-                      onClientUploadComplete={(res) => {
-                        // Do something with the response
-                        console.log("Files: ", res);
-                        setImagePreview(res[0].url);
+                    <CustomUploadDropzone
+                      isUploading={isLoading}
+                      onClientUploadComplete={(res: any) => {
+                        setIsLoading(false)
+                        setImagePreview(res[0].url)
                         toast({
-                          title: "Uploaded",
-                          description: "The image has been uploaded.",
+                          title: 'Image uploaded',
+                          description: 'Your image has been uploaded successfully.',
+                          variant: "default"
                         })
-                      }}   
+                      }}
                       onUploadError={(error: Error) => {
-                        // Do something with the error.
-                        console.error(error);
+                        setIsLoading(false)
+                        console.error(error)
                         toast({
-                          title: "Error",
-                          description: "The image could not be uploaded.",
+                          title: 'Error uploading image',
+                          description: error.message,
+                          variant: "destructive"
                         })
                       }}
                     />
-                    
                   )}
                 </div>
                 <p className="text-xs text-gray-500">Most meme coins use a squared 1000x1000 logo</p>
